@@ -1,0 +1,21 @@
+# Exclude version control files
+.git/
+.gitignore
+
+# Exclude Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Exclude the virtual environment folder
+venv/
+
+# Exclude sensitive environment variable files
+.env
+
+# Exclude editor and IDE files
+.vscode/
+.idea/
+
+# Exclude OS-specific files (macOS)
+.DS_Store

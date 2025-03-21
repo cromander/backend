@@ -18,5 +18,3 @@ if __name__ == '__main__':
     init_db()  
     app.run(debug=app.config['DEBUG'], host='0.0.0.0', port=5000)
 
-# Expose the WSGI callable for production (e.g., Gunicorn)
-application = app
