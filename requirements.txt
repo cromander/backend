@@ -1,0 +1,6 @@
+Flask
+psycopg2-binary
+python-dotenv
+flasgger
+requests
+gunicorn
