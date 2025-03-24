@@ -1,9 +1,15 @@
 # Makefile for Elastic Beanstalk Deployment
 
-.PHONY: deploy logs config-save setenv use help
+.PHONY: create deploy logs config-save setenv use terminate help
 
 # Default environment name; adjust if needed
 ENV=backend-api-dev
+CFG=backend-api-dev-config
+
+# Create a new EB environment using the saved configuration
+create:
+	@echo "Creating EB environment: $(ENV) from saved configuration"
+	eb create $(ENV) --cfg $(CFG)
 
 # Deploy the application to EB
 deploy:
@@ -15,10 +21,13 @@ logs:
 	@echo "Retrieving logs from EB environment: $(ENV)"
 	eb logs $(ENV)
 
-# Save the current EB configuration locally (overwrites existing configuration file)
+# Save the current EB configuration locally.
+# This target deletes the existing configuration template before saving.
 config-save:
-	@echo "Saving EB configuration for $(ENV)"
-	eb config save $(ENV) --cfg backend-api-dev-config
+	@echo "Deleting existing EB configuration template (if it exists)..."
+	- eb config delete $(CFG)
+	@echo "Saving EB configuration for $(ENV) into template $(CFG)"
+	eb config save $(ENV) --cfg $(CFG)
 
 # Set environment variables for the EB environment (optional if already set in saved config)
 setenv:
@@ -34,11 +43,18 @@ use:
 	@echo "Setting default EB environment to $(ENV)"
 	eb use $(ENV)
 
+# Terminate the EB environment
+terminate:
+	@echo "Terminating EB environment: $(ENV)"
+	eb terminate $(ENV)
+
 # Display help information
 help:
 	@echo "Makefile commands:"
+	@echo "  make create      - Creates a new EB environment using the saved configuration"
 	@echo "  make deploy      - Deploys the application to the EB environment"
 	@echo "  make logs        - Retrieves logs from the EB environment"
-	@echo "  make config-save - Saves the current EB configuration to a file"
+	@echo "  make config-save - Deletes existing EB config template and saves the current configuration"
 	@echo "  make setenv      - (Optional) Sets the EB environment variables for the RDS connection"
 	@echo "  make use         - Sets the default EB environment for the current branch"
+	@echo "  make terminate   - Terminates the EB environment (irreversible!)"
