@@ -1,0 +1,44 @@
+# Makefile for Elastic Beanstalk Deployment
+
+.PHONY: deploy logs config-save setenv use help
+
+# Default environment name; adjust if needed
+ENV=backend-api-dev
+
+# Deploy the application to EB
+deploy:
+	@echo "Deploying to EB environment: $(ENV)"
+	eb deploy $(ENV)
+
+# Retrieve logs from the EB environment
+logs:
+	@echo "Retrieving logs from EB environment: $(ENV)"
+	eb logs $(ENV)
+
+# Save the current EB configuration locally (overwrites existing configuration file)
+config-save:
+	@echo "Saving EB configuration for $(ENV)"
+	eb config save $(ENV) --cfg backend-api-dev-config
+
+# Set environment variables for the EB environment (optional if already set in saved config)
+setenv:
+	@echo "Setting environment variables for $(ENV) (overrides saved configuration)"
+	eb setenv DB_HOST=findmycrowd-db.c3mc48i4u7hc.eu-north-1.rds.amazonaws.com \
+	DB_NAME=findmycrowd-db \
+	DB_USER=app_admin \
+	DB_PASSWORD=buffastetas \
+	DEBUG=True
+
+# Set the EB environment as the default for the current branch
+use:
+	@echo "Setting default EB environment to $(ENV)"
+	eb use $(ENV)
+
+# Display help information
+help:
+	@echo "Makefile commands:"
+	@echo "  make deploy      - Deploys the application to the EB environment"
+	@echo "  make logs        - Retrieves logs from the EB environment"
+	@echo "  make config-save - Saves the current EB configuration to a file"
+	@echo "  make setenv      - (Optional) Sets the EB environment variables for the RDS connection"
+	@echo "  make use         - Sets the default EB environment for the current branch"
