@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import psycopg2
 import json
+from datetime import datetime
 from services.geocode import geocode_address
 from os import getenv
 
@@ -27,16 +28,20 @@ def create_event():
         schema:
           type: object
           required:
-            - user_id
+            - name
             - address
             - description
+            - event_date
           properties:
-            user_id:
-              type: integer
+            name:
+              type: string
             address:
               type: string
             description:
               type: string
+            event_date:
+              type: string
+              format: date-time
             image_sources:
               type: array
               items:
@@ -50,7 +55,8 @@ def create_event():
         description: Server error
     """
     data = request.get_json()
-    if not data or not all(key in data for key in ['user_id', 'address', 'description']):
+    required_fields = ['name', 'address', 'description', 'event_date']
+    if not data or not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
@@ -60,27 +66,32 @@ def create_event():
 
     image_sources = data.get('image_sources', [])
     image_sources_json = json.dumps(image_sources)
+    
+    # Capture the current time for when the event is created.
+    event_created = datetime.utcnow()
 
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute(
             '''
-            INSERT INTO events (user_id, address, latitude, longitude, description, image_sources)
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING event_id
+            INSERT INTO events (name, address, latitude, longitude, description, image_sources, event_date, event_created)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING event_id
             ''',
-            (data['user_id'], data['address'], latitude, longitude, data['description'], image_sources_json)
+            (data['name'], data['address'], latitude, longitude, data['description'], image_sources_json, data['event_date'], event_created)
         )
         event_id = cur.fetchone()[0]
         conn.commit()
         return jsonify({
             'event_id': event_id,
-            'user_id': data['user_id'],
+            'name': data['name'],
             'address': data['address'],
             'latitude': latitude,
             'longitude': longitude,
             'description': data['description'],
-            'image_sources': image_sources
+            'image_sources': image_sources,
+            'event_date': data['event_date'],
+            'event_created': event_created.isoformat() + 'Z'
         }), 201
     except psycopg2.Error as e:
         conn.rollback()
