@@ -24,13 +24,14 @@ def init_db():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS events (
             event_id SERIAL PRIMARY KEY,
-            user_id INT NOT NULL,
+            name TEXT NOT NULL,
             address TEXT NOT NULL,
             latitude REAL NOT NULL,
             longitude REAL NOT NULL,
             description TEXT NOT NULL,
             image_sources JSONB,
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            event_date TIMESTAMP NOT NULL,
+            event_created TIMESTAMP NOT NULL
         );
     ''')
     cur.execute('''
