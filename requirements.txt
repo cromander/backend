@@ -4,3 +4,4 @@ python-dotenv
 flasgger
 requests
 gunicorn
+boto3
