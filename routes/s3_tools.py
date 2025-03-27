@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import boto3
+import boto3 # type: ignore
 from botocore.exceptions import ClientError
 import os
 import uuid
