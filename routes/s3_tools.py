@@ -18,13 +18,18 @@ def generate_presigned_url():
     """
     Expects a JSON payload with:
       - file_name: original file name (optional)
-      - file_type: MIME type of the file
+      - file_type: MIME type of the file (e.g., "image/jpeg" or "image/heic")
     Returns a pre-signed URL for uploading to S3 and a unique file key.
     """
     data = request.get_json()
     file_type = data.get('file_type')
     file_name = data.get('file_name', '')
     
+    # Whitelist allowed file types
+    allowed_types = ["image/jpeg", "image/heic"]
+    if file_type not in allowed_types:
+        return jsonify({'error': 'Invalid file type. Only image/jpeg and image/heic are allowed.'}), 400
+
     # Generate a unique file key and store it under the "events/" folder
     file_extension = file_name.split('.')[-1] if '.' in file_name else ''
     unique_key = f"events/{uuid.uuid4()}.{file_extension}" if file_extension else f"events/{uuid.uuid4()}"
