@@ -19,6 +19,9 @@ app.register_blueprint(chats_bp, url_prefix='/chats')
 app.register_blueprint(health_bp, url_prefix='/health')
 app.register_blueprint(s3_tools_bp, url_prefix='/v1/s3')
 
+@app.route('/', methods=['GET'])
+def index():
+    return 'OK', 200
 
 if __name__ == '__main__':
     init_db()  
