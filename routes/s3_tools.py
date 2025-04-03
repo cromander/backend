@@ -3,12 +3,12 @@ import boto3 # type: ignore
 from botocore.exceptions import ClientError
 import os
 import uuid
+from config import Config
 
 s3_tools_bp = Blueprint('s3_tools', __name__)
 
-# Use environment variables for bucket and region
-S3_BUCKET = os.environ.get("S3_BUCKET")
-S3_REGION = os.environ.get("S3_REGION")
+S3_BUCKET = Config.S3_BUCKET
+S3_REGION = Config.S3_REGION
 
 # Create a Boto3 client for S3
 s3_client = boto3.client('s3', region_name=S3_REGION)
@@ -16,10 +16,31 @@ s3_client = boto3.client('s3', region_name=S3_REGION)
 @s3_tools_bp.route('/presigned-url', methods=['POST'])
 def generate_presigned_url():
     """
-    Expects a JSON payload with:
-      - file_name: original file name (optional)
-      - file_type: MIME type of the file (e.g., "image/jpeg" or "image/heic")
-    Returns a pre-signed URL for uploading to S3 and a unique file key.
+    Generate a presigned URL for uploading an image to S3.
+    ---
+    tags:
+      - S3 Tools
+    parameters:
+      - in: body
+        name: payload
+        schema:
+          type: object
+          required:
+            - file_type
+          properties:
+            file_name:
+              type: string
+              description: Original file name (optional)
+            file_type:
+              type: string
+              description: MIME type of the file (e.g., "image/jpeg" or "image/heic")
+    responses:
+      200:
+        description: Returns a presigned URL for uploading and the unique file key.
+      400:
+        description: Invalid input (e.g., unsupported file type).
+      500:
+        description: Server error.
     """
     data = request.get_json()
     file_type = data.get('file_type')
@@ -47,12 +68,74 @@ def generate_presigned_url():
 
     return jsonify({'data': response, 'file_key': unique_key}), 200
 
+@s3_tools_bp.route('/presigned-get-url', methods=['POST'])
+def generate_presigned_get_url():
+    """
+    Generate a presigned URL for image upload.
+    ---
+    tags:
+      - S3 Tools
+    parameters:
+      - in: body
+        name: payload
+        schema:
+          type: object
+          required:
+            - file_type
+          properties:
+            file_name:
+              type: string
+            file_type:
+              type: string
+    responses:
+      200:
+        description: A presigned URL and file key.
+      400:
+        description: Invalid input.
+      500:
+        description: Server error.
+    """
+    data = request.get_json()
+    file_key = data.get('file_key')
+    if not file_key:
+        return jsonify({'error': 'file_key is required'}), 400
+
+    try:
+        get_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_BUCKET, 'Key': file_key},
+            ExpiresIn=3600  # URL valid for 1 hour
+        )
+    except ClientError as e:
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'get_url': get_url}), 200
+
 @s3_tools_bp.route('/delete', methods=['DELETE'])
 def delete_file():
     """
-    Expects a JSON payload with:
-      - file_key: the key of the file to delete from S3.
-    Returns a confirmation message if deletion is successful.
+    Delete a file from S3.
+    ---
+    tags:
+      - S3 Tools
+    parameters:
+      - in: body
+        name: payload
+        schema:
+          type: object
+          required:
+            - file_key
+          properties:
+            file_key:
+              type: string
+              description: The S3 key of the file to delete.
+    responses:
+      200:
+        description: File deletion successful.
+      400:
+        description: file_key is missing from the request.
+      500:
+        description: Server error.
     """
     data = request.get_json()
     file_key = data.get('file_key')

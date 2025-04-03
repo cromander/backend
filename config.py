@@ -10,3 +10,5 @@ class Config:
     DB_USER = os.getenv("DB_USER")
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     DEBUG = os.getenv("DEBUG") == "True"
+    S3_BUCKET = os.environ.get("S3_BUCKET")
+    S3_REGION = os.environ.get("S3_REGION")
