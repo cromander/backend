@@ -4,4 +4,8 @@ python-dotenv
 flasgger
 requests
 gunicorn
-boto3
+boto3>=1.28.27
+botocore>=1.31.27
+flask_cors
+flask_graphql
+graphene

@@ -1,8 +1,11 @@
 import os
-from dotenv import load_dotenv
+
+# for local development, you can uncomment the following lines
+# from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+# load_dotenv()
+
 
 class Config:
     DB_HOST = os.getenv("DB_HOST")

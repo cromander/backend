@@ -1,0 +1,288 @@
+swagger: "2.0"
+info:
+  title: "FindMyCrowd API"
+  version: "1.0.0"
+  description: "API documentation for FindMyCrowd. This includes endpoints for creating users, sending chat messages, generating presigned S3 URLs, and a GraphQL endpoint for querying events."
+host: "api.findmycrowd.xyz"
+basePath: "/"
+schemes:
+  - "https"
+paths:
+  /users:
+    post:
+      summary: "Create a new user"
+      tags:
+        - "Users"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "User object containing username"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "username"
+            properties:
+              username:
+                type: "string"
+      responses:
+        201:
+          description: "User created successfully"
+          schema:
+            type: "object"
+            properties:
+              user_id:
+                type: "integer"
+              username:
+                type: "string"
+        400:
+          description: "Username required or already exists"
+
+  /events:
+    post:
+      summary: "Create a new event"
+      tags:
+        - "Events"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Event object containing details of the event to create"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "user_id"
+              - "name"
+              - "address"
+              - "latitude"
+              - "longitude"
+              - "description"
+              - "image_sources"
+              - "event_date"
+              - "event_start_time"
+              - "event_end_time"
+              - "event_created"
+            properties:
+              user_id:
+                type: "integer"
+                description: "ID of the user creating the event (defaults to 1 if not provided)"
+              name:
+                type: "string"
+              address:
+                type: "string"
+              latitude:
+                type: "number"
+              longitude:
+                type: "number"
+              description:
+                type: "string"
+              image_sources:
+                type: "array"
+                items:
+                  type: "string"
+              event_date:
+                type: "string"
+                format: "date-time"
+              event_start_time:
+                type: "string"
+                format: "date-time"
+              event_end_time:
+                type: "string"
+                format: "date-time"
+              event_created:
+                type: "string"
+                format: "date-time"
+      responses:
+        201:
+          description: "Event created successfully"
+          schema:
+            type: "object"
+            properties:
+              event_id:
+                type: "integer"
+              user_id:
+                type: "integer"
+              name:
+                type: "string"
+              address:
+                type: "string"
+              latitude:
+                type: "number"
+              longitude:
+                type: "number"
+              description:
+                type: "string"
+              image_sources:
+                type: "array"
+                items:
+                  type: "string"
+              event_date:
+                type: "string"
+              event_start_time:
+                type: "string"
+              event_end_time:
+                type: "string"
+              event_created:
+                type: "string"
+                format: "date-time"
+        400:
+          description: "Missing required fields or geocoding error"
+        500:
+          description: "Server error"
+
+  /chats/{event_id}:
+    post:
+      summary: "Send a chat message for an event"
+      tags:
+        - "Chats"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "event_id"
+          in: "path"
+          description: "ID of the event"
+          required: true
+          type: "integer"
+        - in: "body"
+          name: "body"
+          description: "Chat message details"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "user_id"
+              - "message"
+            properties:
+              user_id:
+                type: "integer"
+              message:
+                type: "string"
+      responses:
+        201:
+          description: "Chat message sent successfully"
+        400:
+          description: "Missing required fields or invalid event_id"
+        403:
+          description: "User must follow the event to chat"
+
+  /v1/s3:
+    post:
+      summary: "Generate a presigned URL for uploading an image to S3"
+      tags:
+        - "S3 Tools"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "payload"
+          description: "Payload containing file type (and optionally file name)"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "file_type"
+            properties:
+              file_name:
+                type: "string"
+                description: "Original file name (optional)"
+              file_type:
+                type: "string"
+                description: "MIME type of the file (e.g., image/jpeg, image/heic, image/png)"
+      responses:
+        200:
+          description: "Returns a presigned URL for uploading and the unique file key."
+        400:
+          description: "Invalid input (e.g., unsupported file type)."
+        500:
+          description: "Server error"
+
+      /v1/s3/delete:
+    post:
+      summary: "Delete a file from S3"
+      tags:
+        - "S3 Tools"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "payload"
+          description: "Payload containing the S3 file key to delete"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "file_key"
+            properties:
+              file_key:
+                type: "string"
+                description: "The S3 key of the file to delete"
+      responses:
+        200:
+          description: "File deletion successful."
+        400:
+          description: "file_key is missing from the request."
+        500:
+          description: "Server error."
+
+
+  /gql:
+    post:
+      summary: "GraphQL endpoint for FindMyCrowd"
+      tags:
+        - "GraphQL"
+      description: |
+        This endpoint accepts GraphQL queries and mutations.  
+        **Example Request Body for Benidorm:**
+        ```json
+        {
+          "query": "query GetEvents($minLat: Float!, $maxLat: Float!, $minLng: Float!, $maxLng: Float!) { events(minLat: $minLat, maxLat: $maxLat, minLng: $minLng, maxLng: $maxLng) { eventId userId name address latitude longitude description imageSources eventDate eventStartTime eventEndTime eventCreated eventType} }",
+          "variables": {
+            "minLat": 38.50,
+            "maxLat": 38.60,
+            "minLng": -0.14,
+            "maxLng": -0.11
+          },
+          "operationName": "GetEvents"
+        }
+        ```
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "GraphQL query, variables, and operation name"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              query:
+                type: "string"
+              variables:
+                type: "object"
+              operationName:
+                type: "string"
+      responses:
+        200:
+          description: "Successful GraphQL response"
+          schema:
+            type: "object"
+        400:
+          description: "Invalid query or parameters"
+        500:
+          description: "Internal server error"
