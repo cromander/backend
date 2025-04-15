@@ -14,12 +14,6 @@ from routes.graphql import graphql_bp as graphql_events_bp
 from database.db import init_db, get_db_connection
 import traceback
 
-import boto3
-import botocore
-
-print("boto3 version:", boto3.__version__)
-print("botocore version:", botocore.__version__)
-
 app = Flask(__name__)
 # CORS(app)
 app.config.from_object(Config)
